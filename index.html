@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ESP32 BLE Control</title>
+
+<style>
+
+:root {
+  --main-color: #FF3DC8;
+  --main-dark: #d932a8;
+  --white: #ffffff;
+}
+
+body {
+
+  font-family: Arial, sans-serif;
+  background-color: var(--main-color);
+  color: var(--white);
+  text-align: center;
+  margin: 0;
+  padding: 0;
+
+}
+
+.container {
+
+  margin-top: 60px;
+  background: rgba(255,255,255,0.1);
+  padding: 30px;
+  border-radius: 20px;
+  width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  backdrop-filter: blur(10px);
+
+}
+
+h1 {
+
+  margin-bottom: 20px;
+
+}
+
+button {
+
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 15px;
+
+  font-size: 18px;
+
+  background-color: white;
+  color: var(--main-color);
+
+  border: none;
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+}
+
+button:hover {
+
+  background-color: var(--main-dark);
+  color: white;
+
+}
+
+#status {
+
+  margin-top: 20px;
+  font-weight: bold;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>ESP32 Control</h1>
+
+<button onclick="connect()">Połącz z ESP32</button>
+
+<button onclick="send('ON')">LED ON</button>
+
+<button onclick="send('OFF')">LED OFF</button>
+
+<p id="status">Status: Rozłączono</p>
+
+</div>
+
+<script>
+
+let characteristic;
+
+const SERVICE_UUID =
+"12345678-1234-1234-1234-123456789abc";
+
+const CHARACTERISTIC_UUID =
+"abcd1234-5678-1234-5678-123456789abc";
+
+async function connect() {
+
+  try {
+
+    const device =
+      await navigator.bluetooth.requestDevice({
+
+        acceptAllDevices: true,
+
+        optionalServices: [SERVICE_UUID]
+
+      });
+
+    const server =
+      await device.gatt.connect();
+
+    const service =
+      await server.getPrimaryService(SERVICE_UUID);
+
+    characteristic =
+      await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+    document.getElementById("status").innerText =
+      "Status: Połączono";
+
+  }
+
+  catch(error) {
+
+    document.getElementById("status").innerText =
+      "Status: Błąd połączenia";
+
+  }
+
+}
+
+async function send(text) {
+
+  if (!characteristic) {
+
+    alert("Najpierw połącz się z ESP32");
+
+    return;
+
+  }
+
+  const encoder = new TextEncoder();
+
+  await characteristic.writeValue(
+    encoder.encode(text)
+  );
+
+}
+
+</script>
+
+</body>
+</html>
