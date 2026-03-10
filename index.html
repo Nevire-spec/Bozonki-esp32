@@ -45,8 +45,6 @@ body {
 
 <p id="status">Rozłączono</p>
 
-<p>Temperatura: <span id="temp">--</span> °C</p>
-
 <p>Napięcie: <span id="volt">--</span> V</p>
 
 <p>SOC: <span id="soc">--</span> %</p>
@@ -108,9 +106,6 @@ const parts=value.split(",");
 let temp,volt,soc,soh;
 
 parts.forEach(p=>{
-
-if(p.includes("TEMP"))
-temp=p.split(":")[1];
 
 if(p.includes("VOLT"))
 volt=p.split(":")[1];
