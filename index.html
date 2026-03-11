@@ -5,32 +5,52 @@
 <title>ESP32 Battery Monitor</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #FF3DC8;
-  color: white;
-  text-align: center;
+
+body{
+font-family:Arial;
+background:#FF3DC8;
+color:white;
+text-align:center;
 }
 
-.container {
-  background: rgba(255,255,255,0.1);
-  margin: 20px;
-  padding: 20px;
-  border-radius: 20px;
+.container{
+background:rgba(255,255,255,0.1);
+margin:20px;
+padding:20px;
+border-radius:20px;
 }
 
-.bar {
-  width: 100%;
-  height: 20px;
-  background: rgba(255,255,255,0.3);
-  border-radius: 10px;
+.bar{
+width:100%;
+height:20px;
+background:rgba(255,255,255,0.3);
+border-radius:10px;
+margin-bottom:10px;
 }
 
-.fill {
-  height: 100%;
-  background: white;
-  width: 0%;
+.fill{
+height:100%;
+background:white;
+width:0%;
+border-radius:10px;
 }
+
+.cells{
+margin-top:20px;
+}
+
+.cell{
+margin:5px;
+}
+
+button{
+padding:10px 20px;
+font-size:16px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+}
+
 </style>
 
 </head>
@@ -45,14 +65,33 @@ body {
 
 <p id="status">Rozłączono</p>
 
-<p>Napięcie: <span id="volt">--</span> V</p>
+<h2>Ogniwa</h2>
 
-<p>SOC: <span id="soc">--</span> %</p>
+<div class="cells">
+
+<p class="cell">Cell 1: <span id="c1">--</span> V</p>
+<p class="cell">Cell 2: <span id="c2">--</span> V</p>
+<p class="cell">Cell 3: <span id="c3">--</span> V</p>
+<p class="cell">Cell 4: <span id="c4">--</span> V</p>
+
+</div>
+
+<h2>Temperatura</h2>
+
+<p><span id="temp">--</span> °C</p>
+
+<h2>Stan naładowania (SOC)</h2>
+
+<p><span id="soc">--</span> %</p>
+
 <div class="bar">
 <div id="socbar" class="fill"></div>
 </div>
 
-<p>SOH: <span id="soh">--</span> %</p>
+<h2>Stan zdrowia (SOH)</h2>
+
+<p><span id="soh">--</span> %</p>
+
 <div class="bar">
 <div id="sohbar" class="fill"></div>
 </div>
@@ -70,6 +109,8 @@ const CHARACTERISTIC_UUID =
 "abcd1234-5678-1234-5678-123456789abc";
 
 async function connect(){
+
+try{
 
 const device =
 await navigator.bluetooth.requestDevice({
@@ -95,6 +136,11 @@ handleData
 document.getElementById("status").innerText="Połączono";
 
 }
+catch(error){
+alert("Błąd połączenia: "+error);
+}
+
+}
 
 function handleData(event){
 
@@ -103,12 +149,24 @@ new TextDecoder().decode(event.target.value);
 
 const parts=value.split(",");
 
-let temp,volt,soc,soh;
+let c1,c2,c3,c4,temp,soc,soh;
 
 parts.forEach(p=>{
 
-if(p.includes("VOLT"))
-volt=p.split(":")[1];
+if(p.includes("C1"))
+c1=p.split(":")[1];
+
+if(p.includes("C2"))
+c2=p.split(":")[1];
+
+if(p.includes("C3"))
+c3=p.split(":")[1];
+
+if(p.includes("C4"))
+c4=p.split(":")[1];
+
+if(p.includes("TEMP"))
+temp=p.split(":")[1];
 
 if(p.includes("SOC"))
 soc=p.split(":")[1];
@@ -118,13 +176,64 @@ soh=p.split(":")[1];
 
 });
 
-document.getElementById("temp").innerText=temp;
-document.getElementById("volt").innerText=volt;
-document.getElementById("soc").innerText=soc;
-document.getElementById("soh").innerText=soh;
+if(c1) document.getElementById("c1").innerText=c1;
+if(c2) document.getElementById("c2").innerText=c2;
+if(c3) document.getElementById("c3").innerText=c3;
+if(c4) document.getElementById("c4").innerText=c4;
 
+if(temp) document.getElementById("temp").innerText=temp;
+
+if(soc){
+
+document.getElementById("soc").innerText=soc;
 document.getElementById("socbar").style.width=soc+"%";
+
+}
+
+if(soh){
+
+document.getElementById("soh").innerText=soh;
 document.getElementById("sohbar").style.width=soh+"%";
+
+}
+
+checkAlarms(c1,c2,c3,c4,temp);
+
+}
+
+function checkAlarms(c1,c2,c3,c4,temp){
+
+let cells=[c1,c2,c3,c4];
+
+cells.forEach(c=>{
+
+if(!c) return;
+
+let v=parseFloat(c);
+
+if(v>4.25){
+
+alert("Uwaga! Przeładowanie ogniwa!");
+
+}
+
+if(v<3.0){
+
+alert("Uwaga! Nadmierne rozładowanie ogniwa!");
+
+}
+
+});
+
+if(temp){
+
+if(parseFloat(temp)>60){
+
+alert("Uwaga! Temperatura baterii zbyt wysoka!");
+
+}
+
+}
 
 }
 
